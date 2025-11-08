@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sreality_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-reality_history}
+      POSTGRES_USER: ${POSTGRES_USER:-sreality}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sreality}
+      TZ: ${TZ:-Europe/Prague}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sreality} -d ${POSTGRES_DB:-reality_history}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: always
+    networks:
+      - sreality_net
+
+  crawler:
+    build:
+      context: ./crawler
+      dockerfile: Dockerfile
+    container_name: sreality_crawler
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-reality_history}
+      POSTGRES_USER: ${POSTGRES_USER:-sreality}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sreality}
+      TZ: ${TZ:-Europe/Prague}
+    volumes:
+      - html_data:/app/data/html
+      - logs_data:/app/data/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7070/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+    restart: always
+    mem_limit: 2g
+    networks:
+      - sreality_net
+
+  flask:
+    build:
+      context: ./flask_app
+      dockerfile: Dockerfile
+    container_name: sreality_flask
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-reality_history}
+      POSTGRES_USER: ${POSTGRES_USER:-sreality}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sreality}
+      TZ: ${TZ:-Europe/Prague}
+      FLASK_APP: app.main:app
+      FLASK_ENV: production
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+    restart: always
+    networks:
+      - sreality_net
+
+volumes:
+  postgres_data:
+    driver: local
+  html_data:
+    driver: local
+  logs_data:
+    driver: local
+
+networks:
+  sreality_net:
+    driver: bridge
