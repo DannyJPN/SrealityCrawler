@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}{{ listing.title }} - SrealityCrawler{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="/" class="btn btn-secondary">← Zpět na přehled</a>
+</div>
+
+<div style="background-color: white; padding: 30px; border-radius: 5px; margin-bottom: 20px;">
+    <h2>{{ listing.title }}</h2>
+    <p style="color: #7f8c8d; margin-top: 10px;">
+        ID: {{ listing.listing_id }} |
+        {{ listing.category }} - {{ listing.transaction_type }} |
+        {% if listing.is_active %}
+        <span class="badge badge-success">Aktivní</span>
+        {% else %}
+        <span class="badge badge-danger">Neaktivní</span>
+        {% endif %}
+    </p>
+</div>
+
+{% if images %}
+<h3>Fotografie ({{ images|length }})</h3>
+<div class="gallery">
+    {% for image in images %}
+    <img src="{{ image.image_url }}" alt="Fotografie {{ loop.index }}"
+         onclick="window.open('{{ image.image_url }}', '_blank')">
+    {% endfor %}
+</div>
+{% endif %}
+
+<h3>Základní informace</h3>
+<div class="detail-grid">
+    <div class="detail-item">
+        <strong>Cena</strong>
+        {{ '{:,.0f}'.format(listing.price).replace(',', ' ') if listing.price else '—' }} Kč
+    </div>
+
+    <div class="detail-item">
+        <strong>Obec</strong>
+        {{ listing.municipality or '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Část obce</strong>
+        {{ listing.city_part or '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Ulice</strong>
+        {{ listing.street or '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Okres</strong>
+        {{ listing.district or '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Kraj</strong>
+        {{ listing.region or '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Užitná plocha</strong>
+        {{ '{:.1f}'.format(listing.usable_area) if listing.usable_area else '—' }} m²
+    </div>
+
+    <div class="detail-item">
+        <strong>Podlahová plocha</strong>
+        {{ '{:.1f}'.format(listing.floor_area) if listing.floor_area else '—' }} m²
+    </div>
+
+    <div class="detail-item">
+        <strong>Plocha pozemku</strong>
+        {{ '{:.1f}'.format(listing.land_area) if listing.land_area else '—' }} m²
+    </div>
+
+    <div class="detail-item">
+        <strong>Cena za m²</strong>
+        {{ '{:,.0f}'.format(listing.price_per_sqm).replace(',', ' ') if listing.price_per_sqm else '—' }} Kč
+    </div>
+
+    <div class="detail-item">
+        <strong>Typ stavby</strong>
+        {{ listing.building_type or '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Stav</strong>
+        {{ listing.condition or '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Vlastnictví</strong>
+        {{ listing.ownership or '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>První viděno</strong>
+        {{ listing.first_seen_at.strftime('%d.%m.%Y %H:%M') if listing.first_seen_at else '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Naposledy viděno</strong>
+        {{ listing.last_seen_at.strftime('%d.%m.%Y %H:%M') if listing.last_seen_at else '—' }}
+    </div>
+
+    <div class="detail-item">
+        <strong>Poslední změna</strong>
+        {{ listing.last_modified_at.strftime('%d.%m.%Y %H:%M') if listing.last_modified_at else '—' }}
+    </div>
+</div>
+
+{% if type_specific %}
+<h3>Specifické informace</h3>
+<div class="detail-grid">
+    {% for key, value in type_specific.items() %}
+    {% if key not in ['id', 'listing_id', 'created_at', 'updated_at'] and value is not none %}
+    <div class="detail-item">
+        <strong>{{ key.replace('_', ' ').title() }}</strong>
+        {% if value is sameas true %}Ano{% elif value is sameas false %}Ne{% else %}{{ value }}{% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if listing.description %}
+<h3>Popis</h3>
+<div style="background-color: white; padding: 20px; border-radius: 5px; margin-top: 20px; line-height: 1.8;">
+    {{ listing.description }}
+</div>
+{% endif %}
+
+<div style="margin-top: 20px;">
+    <strong>Zdrojová URL:</strong>
+    <a href="{{ listing.source_url }}" target="_blank" rel="noopener">{{ listing.source_url }}</a>
+</div>
+
+<h3 style="margin-top: 40px;">Historie změn ({{ history|length }} změn)</h3>
+
+{% if history %}
+<div style="margin-top: 20px;">
+    {% for entry in history %}
+    <div class="history-entry {% if entry.is_checkpoint %}checkpoint{% endif %}">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <strong>Změna #{{ entry.change_number }}
+                {% if entry.is_checkpoint %}(Checkpoint){% endif %}
+            </strong>
+            <span style="color: #7f8c8d;">{{ entry.changed_at.strftime('%d.%m.%Y %H:%M:%S') }}</span>
+        </div>
+
+        <details>
+            <summary style="cursor: pointer; color: #3498db;">Zobrazit změny</summary>
+            <div style="margin-top: 10px; padding: 10px; background-color: #ecf0f1; border-radius: 3px;">
+                <pre style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em;">{{ entry.changed_fields|tojson(indent=2) }}</pre>
+            </div>
+        </details>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p style="padding: 20px; background-color: white; border-radius: 5px; text-align: center;">
+    Zatím nejsou zaznamenány žádné změny.
+</p>
+{% endif %}
+
+{% endblock %}

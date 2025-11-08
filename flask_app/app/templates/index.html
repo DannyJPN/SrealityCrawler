@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Přehled inzerátů - SrealityCrawler{% endblock %}
+
+{% block content %}
+<h2>Přehled inzerátů ({{ total }} celkem)</h2>
+
+<div class="filters">
+    <form method="get" action="/">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="category">Kategorie:</label>
+                <select name="category" id="category">
+                    <option value="">Vše</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="transaction_type">Typ transakce:</label>
+                <select name="transaction_type" id="transaction_type">
+                    <option value="">Vše</option>
+                    {% for tt in transaction_types %}
+                    <option value="{{ tt }}" {% if filters.transaction_type == tt %}selected{% endif %}>{{ tt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="municipality">Obec:</label>
+                <input type="text" name="municipality" id="municipality"
+                       value="{{ filters.municipality or '' }}"
+                       placeholder="Zadejte obec...">
+            </div>
+
+            <div class="filter-group">
+                <label for="is_active">Stav:</label>
+                <select name="is_active" id="is_active">
+                    <option value="true" {% if filters.is_active %}selected{% endif %}>Aktivní</option>
+                    <option value="false" {% if not filters.is_active %}selected{% endif %}>Neaktivní</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="price_min">Cena od (Kč):</label>
+                <input type="number" name="price_min" id="price_min"
+                       value="{{ filters.price_min or '' }}"
+                       placeholder="0">
+            </div>
+
+            <div class="filter-group">
+                <label for="price_max">Cena do (Kč):</label>
+                <input type="number" name="price_max" id="price_max"
+                       value="{{ filters.price_max or '' }}"
+                       placeholder="Neomezeno">
+            </div>
+
+            <div class="filter-group">
+                <label for="usable_area_min">Plocha od (m²):</label>
+                <input type="number" step="0.1" name="usable_area_min" id="usable_area_min"
+                       value="{{ filters.usable_area_min or '' }}"
+                       placeholder="0">
+            </div>
+
+            <div class="filter-group">
+                <label for="usable_area_max">Plocha do (m²):</label>
+                <input type="number" step="0.1" name="usable_area_max" id="usable_area_max"
+                       value="{{ filters.usable_area_max or '' }}"
+                       placeholder="Neomezeno">
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="per_page">Zobrazit na stránku:</label>
+                <select name="per_page" id="per_page">
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                    <option value="200" {% if per_page == 200 %}selected{% endif %}>200</option>
+                    <option value="500" {% if per_page == 500 %}selected{% endif %}>500</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn">Filtrovat</button>
+                    <a href="/" class="btn btn-secondary">Zrušit filtry</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if listings %}
+<table>
+    <thead>
+        <tr>
+            <th>
+                <a href="?{{ request.query_string.decode()|replace('sort_by=' + sort_by, 'sort_by=title')|replace('sort_order=' + sort_order, 'sort_order=' + ('desc' if sort_by == 'title' and sort_order == 'asc' else 'asc')) }}" style="color: white; text-decoration: none;">
+                    Název {% if sort_by == 'title' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?{{ request.query_string.decode()|replace('sort_by=' + sort_by, 'sort_by=price')|replace('sort_order=' + sort_order, 'sort_order=' + ('desc' if sort_by == 'price' and sort_order == 'asc' else 'asc')) }}" style="color: white; text-decoration: none;">
+                    Cena {% if sort_by == 'price' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?{{ request.query_string.decode()|replace('sort_by=' + sort_by, 'sort_by=category')|replace('sort_order=' + sort_order, 'sort_order=' + ('desc' if sort_by == 'category' and sort_order == 'asc' else 'asc')) }}" style="color: white; text-decoration: none;">
+                    Typ {% if sort_by == 'category' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="?{{ request.query_string.decode()|replace('sort_by=' + sort_by, 'sort_by=municipality')|replace('sort_order=' + sort_order, 'sort_order=' + ('desc' if sort_by == 'municipality' and sort_order == 'asc' else 'asc')) }}" style="color: white; text-decoration: none;">
+                    Obec {% if sort_by == 'municipality' %}{{ '↑' if sort_order == 'asc' else '↓' }}{% endif %}
+                </a>
+            </th>
+            <th>Plocha (m²)</th>
+            <th>Cena/m²</th>
+            <th>Stav</th>
+            <th>Detail</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for listing in listings %}
+        <tr>
+            <td>{{ listing.title[:80] }}{% if listing.title|length > 80 %}...{% endif %}</td>
+            <td>{{ '{:,.0f}'.format(listing.price).replace(',', ' ') if listing.price else '—' }} Kč</td>
+            <td>{{ listing.category }} / {{ listing.transaction_type }}</td>
+            <td>{{ listing.municipality or '—' }}</td>
+            <td>{{ '{:.1f}'.format(listing.usable_area) if listing.usable_area else '—' }}</td>
+            <td>{{ '{:,.0f}'.format(listing.price_per_sqm).replace(',', ' ') if listing.price_per_sqm else '—' }} Kč</td>
+            <td>
+                {% if listing.is_active %}
+                <span class="badge badge-success">Aktivní</span>
+                {% else %}
+                <span class="badge badge-danger">Neaktivní</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="/listing/{{ listing.listing_id }}" class="btn" style="padding: 5px 10px; font-size: 0.85em;">Detail</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="pagination">
+    {% if page > 1 %}
+    <a href="?{{ request.query_string.decode()|replace('page=' + page|string, 'page=1') }}&page=1">« První</a>
+    <a href="?{{ request.query_string.decode()|replace('page=' + page|string, 'page=' + (page - 1)|string) }}&page={{ page - 1 }}">‹ Předchozí</a>
+    {% endif %}
+
+    <span class="current">Stránka {{ page }} z {{ total_pages }}</span>
+
+    {% if page < total_pages %}
+    <a href="?{{ request.query_string.decode()|replace('page=' + page|string, 'page=' + (page + 1)|string) }}&page={{ page + 1 }}">Další ›</a>
+    <a href="?{{ request.query_string.decode()|replace('page=' + page|string, 'page=' + total_pages|string) }}&page={{ total_pages }}">Poslední »</a>
+    {% endif %}
+</div>
+
+{% else %}
+<p style="text-align: center; padding: 40px; background-color: white; border-radius: 5px;">
+    Žádné inzeráty nebyly nalezeny. Zkuste změnit filtry.
+</p>
+{% endif %}
+
+{% endblock %}
