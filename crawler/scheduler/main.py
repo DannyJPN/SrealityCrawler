@@ -215,7 +215,7 @@ def progress():
     """Progress monitoring endpoint"""
     try:
         # Read progress from file written by spider
-        progress_file = Path('/tmp/crawler_progress.txt')
+        progress_file = Path('/app/data/logs/crawler_progress.txt')
 
         if not progress_file.exists():
             # If file doesn't exist, check if crawler is running
@@ -283,7 +283,7 @@ def main():
 
     # Initialize progress file
     try:
-        with open('/tmp/crawler_progress.txt', 'w') as f:
+        with open('/app/data/logs/crawler_progress.txt', 'w') as f:
             f.write('0')
     except Exception as e:
         logger.error(f'Failed to initialize progress file: {e}')

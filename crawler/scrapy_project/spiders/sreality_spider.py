@@ -6,9 +6,12 @@ import re
 import logging
 from urllib.parse import urljoin, urlparse, parse_qs
 from datetime import datetime
+import hashlib
 
 import scrapy
 from scrapy.http import Request
+from scrapy import signals
+from scrapy.exceptions import DontCloseSpider
 from bs4 import BeautifulSoup
 
 from scrapy_project.items import ListingItem
@@ -43,6 +46,34 @@ class SrealitySpider(scrapy.Spider):
         self.listing_urls = set()
         self.total_listings = 0
         self.processed_listings = 0
+        self.detail_fetching_started = False
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        spider = super().from_crawler(crawler, *args, **kwargs)
+        crawler.signals.connect(spider.spider_idle, signal=signals.spider_idle)
+        return spider
+
+    def spider_idle(self, spider):
+        """Called when spider has no more requests - start detail fetching"""
+        if not self.detail_fetching_started and self.listing_urls:
+            self.detail_fetching_started = True
+            self.total_listings = len(self.listing_urls)
+
+            logger.info(f'Starting detail fetching for {self.total_listings} listings')
+
+            # Schedule all detail requests
+            for listing_url in self.listing_urls:
+                req = scrapy.Request(
+                    listing_url,
+                    callback=self.parse_detail,
+                    errback=self.handle_detail_error,
+                    dont_filter=True
+                )
+                self.crawler.engine.crawl(req, self)
+
+            # Prevent spider from closing
+            raise DontCloseSpider('Fetching detail pages')
 
     def start_requests(self):
         """Start by fetching the main page and sitemap"""
@@ -172,30 +203,6 @@ class SrealitySpider(scrapy.Spider):
             )
         else:
             logger.info(f'No more pages for {category}/{transaction_type}')
-
-            # Now that we have all URLs from this category, start fetching details
-            self._start_detail_fetching()
-
-    def _start_detail_fetching(self):
-        """Start fetching detail pages for all collected listing URLs"""
-        # This is called after pagination is complete
-        # We'll fetch detail pages in the spider's idle callback
-
-        if hasattr(self, '_detail_fetching_started'):
-            return
-
-        self._detail_fetching_started = True
-        self.total_listings = len(self.listing_urls)
-
-        logger.info(f'Starting detail fetching for {self.total_listings} listings')
-
-        for listing_url in self.listing_urls:
-            yield Request(
-                listing_url,
-                callback=self.parse_detail,
-                errback=self.handle_detail_error,
-                dont_filter=True
-            )
 
     def parse_detail(self, response):
         """Parse a listing detail page"""
@@ -617,7 +624,7 @@ class SrealitySpider(scrapy.Spider):
 
             # Store progress in a file that the HTTP server can read
             try:
-                with open('/tmp/crawler_progress.txt', 'w') as f:
+                with open('/app/data/logs/crawler_progress.txt', 'w') as f:
                     f.write(str(int(progress_percent)))
             except Exception as e:
                 logger.error(f'Failed to write progress: {e}')
@@ -629,10 +636,7 @@ class SrealitySpider(scrapy.Spider):
 
         # Reset progress
         try:
-            with open('/tmp/crawler_progress.txt', 'w') as f:
+            with open('/app/data/logs/crawler_progress.txt', 'w') as f:
                 f.write('0')
         except Exception:
             pass
-
-
-import hashlib

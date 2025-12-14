@@ -168,7 +168,7 @@ class RetryMiddleware(BaseRetryMiddleware):
             self.current_delay = max(self.current_delay * 0.95, self.base_delay)
 
     def _retry(self, request, reason, spider):
-        """Retry request with backoff"""
+        """Retry request with exponential backoff"""
         retries = request.meta.get('retry_times', 0) + 1
 
         retry_times = self.max_retry_times
@@ -177,14 +177,19 @@ class RetryMiddleware(BaseRetryMiddleware):
                 f"Retrying {request.url} (failed {retries} times): {reason}"
             )
 
-            # Add exponential backoff with jitter
+            # GEOMETRICKÝ BACKOFF podle specifikace (řádek 48)
+            # Exponenciálně zvyšuj delay podle počtu chyb
             backoff = min(2 ** retries + (time.time() % 1), 60)
-            time.sleep(backoff)
 
+            # ASYNC-SAFE implementace pomocí download_delay
+            # Toto NEblokuje Twisted reactor
             retryreq = request.copy()
             retryreq.meta['retry_times'] = retries
+            retryreq.meta['download_delay'] = backoff  # Scrapy respektuje tento meta tag
             retryreq.dont_filter = True
             retryreq.priority = request.priority + self.priority_adjust
+
+            logger.debug(f"Retry {retries}/{retry_times} for {request.url} with {backoff:.1f}s delay")
 
             return retryreq
         else:
