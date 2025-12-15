@@ -7,6 +7,7 @@ SET timezone = 'Europe/Prague';
 
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- ============================================================================
 -- ENUMERATIONS
@@ -531,6 +532,3 @@ BEGIN
     RETURN v_state;
 END;
 $$ LANGUAGE plpgsql;
-
--- Create trgm extension for text search
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
