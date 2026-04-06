@@ -33,6 +33,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-sreality}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sreality}
       TZ: ${TZ:-Europe/Prague}
+      DEBUGPY_ENABLE: ${CRAWLER_DEBUGPY_ENABLE:-0}
+      DEBUGPY_WAIT: ${CRAWLER_DEBUGPY_WAIT:-0}
+      DEBUGPY_PORT: ${CRAWLER_DEBUGPY_PORT:-5678}
     volumes:
       - html_data:/app/data/html
       - logs_data:/app/data/logs
@@ -44,6 +47,8 @@ services:
       interval: 15s
       timeout: 5s
       retries: 6
+    ports:
+      - "127.0.0.1:5678:5678"
     restart: always
     mem_limit: 2g
     networks:
@@ -63,8 +68,12 @@ services:
       TZ: ${TZ:-Europe/Prague}
       FLASK_APP: app.main:app
       FLASK_ENV: production
+      DEBUGPY_ENABLE: ${FLASK_DEBUGPY_ENABLE:-0}
+      DEBUGPY_WAIT: ${FLASK_DEBUGPY_WAIT:-0}
+      DEBUGPY_PORT: ${FLASK_DEBUGPY_PORT:-5679}
     ports:
       - "127.0.0.1:8000:8000"
+      - "127.0.0.1:5679:5679"
     depends_on:
       db:
         condition: service_healthy

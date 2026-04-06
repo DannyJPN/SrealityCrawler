@@ -4,11 +4,6 @@
       "List(**)",
       "Search(**)",
       "Read(./**)",
-      "Read(H:/**)",
-      "Read(F:/**)",
-      "Read(L:/**)",
-      "Read(M:/**)",
-      "Read(N:/**)",
 
       "Bash(python -m venv:*)",
       "Bash(.*[\\\\/]?venv[\\\\/].*[\\\\/](python|python\\.exe):*)",
@@ -18,26 +13,32 @@
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git show:*)",
-      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git config --get:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git ls-remote:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git describe:*)",
 
-      "Bash(gh pr list:*)",
-      "Bash(gh pr view:*)",
-      "Bash(gh pr diff:*)",
+      "Bash(gh --version:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh repo list:*)",
       "Bash(gh issue list:*)",
       "Bash(gh issue view:*)",
-      "Bash(gh repo view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr status:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh release list:*)",
+      "Bash(gh release view:*)",
+      "Bash(gh api:*)",
 
       "Bash(git checkout -b claude/*:*)",
       "Bash(git switch -c claude/*:*)",
 
       "Bash(ping:*)",
-      "Bash(iconv:*)",
-      "Bash(sort:*)",
-      "Bash(gh issue create:*)",
-
-      "Bash(powershell.exe -NoProfile -Command \"Stop-Process -Name 'Dropbox'*:*)",
-      "Bash(powershell.exe -Command \"Get-Process -Name 'Dropbox'*:*)",
-      "Bash(powershell.exe -NoProfile -Command \"Start-Process -FilePath*Dropbox*:*)",
 
       "Bash(scrapy startproject:*)",
       "Bash(scrapy genspider:*)",
@@ -58,15 +59,18 @@
       "Bash(docker compose ps:*)",
       "Bash(docker compose exec:*)",
       "Bash(docker compose run:*)",
+      "Bash(docker version:*)",
+      "Bash(docker ps:*)",
+
+      "Bash(powershell.exe -NoProfile -Command \"Start-Process 'C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe'\":*)",
+      "Bash(powershell.exe -NoProfile -Command \"Get-Process -Name 'Docker Desktop'*:*)",
 
       "Bash(psql:*)",
       "Bash(createdb:*)",
       "Bash(pg_dump:*)",
       "Bash(pg_restore:*)",
 
-      "Read(//f/tmp/claude/**)",
-
-      "WebSearch",
+      "Delete(./**/*.tmp.*)",
 
       "WebFetch(domain:docs.python.org)",
       "WebFetch(domain:pypi.org)",
@@ -98,21 +102,22 @@
       "WebFetch(domain:ai.meta.com)",
       "WebFetch(domain:llama.meta.com)",
       "WebFetch(domain:huggingface.co)",
-      "WebFetch(domain:docs.huggingface.co)"
+      "WebFetch(domain:docs.huggingface.co)",
 
+      "WebFetch(domain:rfc-editor.org)",
+      "WebFetch(domain:ietf.org)",
+
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "ask": [
       "Write(./**)",
       "Edit(./**)",
       "Delete(./**)",
-      "Update(./**)",
-
       "Bash(python *.py:*)",
       "Bash(pytest:*)",
       "Bash(coverage:*)",
-      "Bash(ruff:*)",
-      "Bash(black:*)",
-      "Bash(mypy:*)",
 
       "Bash(git add:*)",
       "Bash(git commit:*)",
@@ -129,10 +134,6 @@
     ],
     "deny": [
       "Read(C:/**)",
-
-      "Write(/**)",
-      "Edit(/**)",
-      "Delete(/**)",
 
       "Bash(git merge:*)",
 
@@ -161,14 +162,20 @@
   ],
 
   "statusLine": {
-    "type": "text",
-    "text": "SrealityCrawler Project"
+    "type": "command",
+    "command": "input=$(cat); current_dir=$(echo \"$input\" | jq -r '.workspace.current_dir'); model_name=$(echo \"$input\" | jq -r '.model.display_name'); project_dir=$(echo \"$input\" | jq -r '.workspace.project_dir'); if [ -d \"$current_dir/.git\" ] || git -C \"$current_dir\" rev-parse --git-dir >/dev/null 2>&1; then git_branch=$(git -C \"$current_dir\" rev-parse --abbrev-ref HEAD 2>/dev/null); git_status=$(git -C \"$current_dir\" status --porcelain 2>/dev/null | wc -l); if [ \"$git_status\" -gt 0 ]; then git_indicator=\"*\"; else git_indicator=\"\"; fi; git_info=\"\\033[36m($git_branch$git_indicator)\\033[0m\"; else git_info=\"\"; fi; rel_path=$(echo \"$current_dir\" | sed \"s|^$project_dir||\" | sed 's|^/||'); if [ -z \"$rel_path\" ]; then rel_path=\".\"; fi; current_time=$(date +\"%H:%M:%S\"); printf \"\\033[32m%s\\033[0m:\\033[34m%s\\033[0m %s \\033[33m%s\\033[0m \\033[90m%s\\033[0m\" \"$(whoami)\" \"$rel_path\" \"$git_info\" \"$model_name\" \"$current_time\""
   },
 
-  "dropboxManagement": {
-    "stopCommand": "powershell.exe -NoProfile -Command \"Stop-Process -Name 'Dropbox' -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2\"",
-    "startCommand": "powershell.exe -NoProfile -Command \"Start-Process -FilePath 'C:\\Program Files (x86)\\Dropbox\\Client\\Dropbox.exe'\"",
-    "checkCommand": "powershell.exe -Command \"Get-Process -Name 'Dropbox' -ErrorAction SilentlyContinue\"",
-    "note": "Always stop Dropbox BEFORE git operations (add/commit/push) to avoid permission denied errors in .git/objects/"
+  "contextFiles": [
+    "CLAUDE.md"
+  ],
+
+  "editor": {
+    "type": "pycharm"
+  },
+
+  "autocompact": {
+    "enabled": true,
+    "threshold": 0.75
   }
 }

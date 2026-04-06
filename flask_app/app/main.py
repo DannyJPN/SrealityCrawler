@@ -1,4 +1,4 @@
-"""
+    """
 Flask application for SrealityCrawler web UI
 Read-only interface for browsing and filtering listings
 """
