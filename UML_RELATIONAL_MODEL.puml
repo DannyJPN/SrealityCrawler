@@ -1,0 +1,223 @@
+@startuml
+hide circle
+hide methods
+skinparam classAttributeIconSize 0
+
+class listing_entities {
+  +entity_id : bigint <<PK>>
+  source_listing_id : bigint
+  offer_type : text
+  main_category : text
+  subtype : text
+  location_key : text
+  location_display : text
+  first_seen_at : timestamptz
+  last_seen_at : timestamptz
+  ended_at : timestamptz?
+  is_active : boolean
+  current_version_id : bigint? <<FK>>
+  created_run_id : bigint <<FK>>
+  ended_run_id : bigint? <<FK>>
+}
+
+class listing_versions {
+  +version_id : bigint <<PK>>
+  entity_id : bigint <<FK>>
+  crawl_run_id : bigint <<FK>>
+  observed_at : timestamptz
+  version_kind : text
+  content_hash : text
+  html_snapshot_id : bigint? <<FK>>
+  is_checkpoint : boolean
+  checkpoint_number : integer?
+}
+
+class attribute_definitions {
+  +attribute_id : bigint <<PK>>
+  attribute_code : text <<UQ>>
+  label : text
+  value_type : text
+  unit : text?
+  category_scope : text?
+  main_category_scope : text?
+  is_identity_part : boolean
+  is_filterable : boolean
+  is_display_priority : boolean
+  display_order : integer
+  notes : text?
+}
+
+class listing_attribute_current {
+  +entity_id : bigint <<PK,FK>>
+  +attribute_id : bigint <<PK,FK>>
+  value_string : text?
+  value_text : text?
+  value_integer : bigint?
+  value_decimal : numeric?
+  value_boolean : boolean?
+  value_date : date?
+  value_datetime : timestamptz?
+  value_json : jsonb?
+  value_hash : text
+  updated_at : timestamptz
+  last_seen_in_version_id : bigint <<FK>>
+}
+
+class listing_attribute_events {
+  +event_id : bigint <<PK>>
+  entity_id : bigint <<FK>>
+  version_id : bigint <<FK>>
+  crawl_run_id : bigint <<FK>>
+  attribute_id : bigint <<FK>>
+  event_type : text
+  old_value_string : text?
+  old_value_text : text?
+  old_value_integer : bigint?
+  old_value_decimal : numeric?
+  old_value_boolean : boolean?
+  old_value_date : date?
+  old_value_datetime : timestamptz?
+  old_value_json : jsonb?
+  new_value_string : text?
+  new_value_text : text?
+  new_value_integer : bigint?
+  new_value_decimal : numeric?
+  new_value_boolean : boolean?
+  new_value_date : date?
+  new_value_datetime : timestamptz?
+  new_value_json : jsonb?
+  old_value_hash : text?
+  new_value_hash : text?
+  event_time : timestamptz
+}
+
+class crawl_runs {
+  +crawl_run_id : bigint <<PK>>
+  started_at : timestamptz
+  finished_at : timestamptz?
+  status : text
+  trigger_type : text
+  storage_backend : text
+  notes : text?
+}
+
+class crawl_run_scopes {
+  +crawl_run_scope_id : bigint <<PK>>
+  crawl_run_id : bigint <<FK>>
+  offer_type : text
+  main_category : text
+  subtype : text?
+  location_scope_type : text
+  location_scope_key : text
+  coverage_status : text
+  expected_page_count : integer?
+  fetched_page_count : integer
+  notes : text?
+}
+
+class listing_presence {
+  +crawl_run_id : bigint <<PK,FK>>
+  +entity_id : bigint <<PK,FK>>
+  crawl_run_scope_id : bigint? <<FK>>
+  seen_at : timestamptz
+}
+
+class html_snapshots {
+  +html_snapshot_id : bigint <<PK>>
+  entity_id : bigint <<FK>>
+  crawl_run_id : bigint <<FK>>
+  file_path : text
+  content_hash : text
+  stored_at : timestamptz
+  is_latest : boolean
+}
+
+class listing_media {
+  +media_id : bigint <<PK>>
+  entity_id : bigint <<FK>>
+  external_media_id : text?
+  media_type : text
+  source_url : text
+  original_url : text?
+  sort_order : integer?
+  mime_type : text?
+  checksum : text?
+  storage_backend : text
+  storage_path : text?
+  storage_ref : text?
+  is_active : boolean
+  first_seen_at : timestamptz
+  last_seen_at : timestamptz
+}
+
+class listing_media_events {
+  +media_event_id : bigint <<PK>>
+  entity_id : bigint <<FK>>
+  version_id : bigint <<FK>>
+  crawl_run_id : bigint <<FK>>
+  media_id : bigint? <<FK>>
+  event_type : text
+  source_url : text
+  sort_order : integer?
+  event_time : timestamptz
+}
+
+class entity_links {
+  +link_id : bigint <<PK>>
+  old_entity_id : bigint <<FK>>
+  new_entity_id : bigint <<FK>>
+  link_type : text
+  created_at : timestamptz
+}
+
+crawl_runs "1" -- "0..*" crawl_run_scopes
+crawl_runs "1" -- "0..*" listing_versions
+crawl_runs "1" -- "0..*" listing_attribute_events
+crawl_runs "1" -- "0..*" listing_media_events
+crawl_runs "1" -- "0..*" html_snapshots
+crawl_runs "1" -- "0..*" listing_presence
+
+listing_entities "1" -- "0..*" listing_versions
+listing_entities "1" -- "0..*" listing_attribute_current
+listing_entities "1" -- "0..*" listing_attribute_events
+listing_entities "1" -- "0..*" html_snapshots
+listing_entities "1" -- "0..*" listing_media
+listing_entities "1" -- "0..*" listing_media_events
+listing_entities "1" -- "0..*" listing_presence
+
+listing_versions "1" -- "0..*" listing_attribute_events
+listing_versions "1" -- "0..*" listing_media_events
+listing_versions "0..1" -- "0..*" html_snapshots
+
+attribute_definitions "1" -- "0..*" listing_attribute_current
+attribute_definitions "1" -- "0..*" listing_attribute_events
+
+crawl_run_scopes "1" -- "0..*" listing_presence
+
+listing_media "0..1" -- "0..*" listing_media_events
+
+entity_links "0..*" -- "1" listing_entities : old_entity
+entity_links "0..*" -- "1" listing_entities : new_entity
+
+note right of listing_entities
+  Unique business identity:
+  source_listing_id +
+  offer_type +
+  main_category +
+  subtype +
+  location_key
+end note
+
+note bottom of listing_attribute_events
+  Tracks:
+  - added
+  - changed
+  - removed
+end note
+
+note bottom of crawl_run_scopes
+  Required for safe deactivation.
+  Only processed scopes may affect is_active.
+end note
+
+@enduml
