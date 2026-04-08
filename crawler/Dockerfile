@@ -29,4 +29,4 @@ RUN mkdir -p /app/data/html /app/data/logs
 EXPOSE 7070
 
 # Run the crawler scheduler (optionally under debugpy)
-CMD ["sh", "-c", "if [ \"$DEBUGPY_ENABLE\" = \"1\" ]; then WAIT=\"\"; if [ \"$DEBUGPY_WAIT\" = \"1\" ]; then WAIT=\"--wait-for-client\"; fi; python -m debugpy --listen 0.0.0.0:${DEBUGPY_PORT:-5678} $WAIT scheduler/main.py; else python scheduler/main.py; fi"]
+CMD ["sh", "-c", "if [ \"$DEBUGPY_ENABLE\" = \"1\" ]; then WAIT=\"\"; if [ \"$DEBUGPY_WAIT\" = \"1\" ]; then WAIT=\"--wait-for-client\"; fi; python -m debugpy --listen 0.0.0.0:${DEBUGPY_PORT:-5678} $WAIT -m scheduler.main; else python -m scheduler.main; fi"]
