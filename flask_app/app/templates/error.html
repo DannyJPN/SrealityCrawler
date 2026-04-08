@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Chyba - SrealityCrawler{% endblock %}
+
+{% block content %}
+<div class="error-message">
+    <h2>Došlo k chybě</h2>
+    <p style="margin-top: 15px;">{{ error }}</p>
+</div>
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="/" class="btn">Zpět na hlavní stránku</a>
+</div>
+{% endblock %}

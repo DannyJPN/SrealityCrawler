@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Statistiky - SrealityCrawler{% endblock %}
+
+{% block content %}
+<h2>Statistiky</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/" class="btn btn-secondary">← Zpět na přehled</a>
+</div>
+
+<div class="detail-grid">
+    <div class="detail-item" style="background-color: #3498db; color: white;">
+        <strong style="color: white;">Celkem inzerátů</strong>
+        <h2 style="margin-top: 10px; font-size: 2.5em;">{{ '{:,}'.format(stats.total_listings).replace(',', ' ') }}</h2>
+    </div>
+
+    <div class="detail-item" style="background-color: #27ae60; color: white;">
+        <strong style="color: white;">Aktivních inzerátů</strong>
+        <h2 style="margin-top: 10px; font-size: 2.5em;">{{ '{:,}'.format(stats.active_listings).replace(',', ' ') }}</h2>
+    </div>
+
+    <div class="detail-item" style="background-color: #e74c3c; color: white;">
+        <strong style="color: white;">Neaktivních inzerátů</strong>
+        <h2 style="margin-top: 10px; font-size: 2.5em;">{{ '{:,}'.format(stats.total_listings - stats.active_listings).replace(',', ' ') }}</h2>
+    </div>
+</div>
+
+<h3 style="margin-top: 40px;">Podle kategorií</h3>
+<table style="margin-top: 20px;">
+    <thead>
+        <tr>
+            <th>Kategorie</th>
+            <th>Počet aktivních inzerátů</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in stats.by_category %}
+        <tr>
+            <td>{{ item.category }}</td>
+            <td>{{ '{:,}'.format(item.count).replace(',', ' ') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3 style="margin-top: 40px;">Podle typu transakce</h3>
+<table style="margin-top: 20px;">
+    <thead>
+        <tr>
+            <th>Typ transakce</th>
+            <th>Počet aktivních inzerátů</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in stats.by_transaction %}
+        <tr>
+            <td>{{ item.transaction_type }}</td>
+            <td>{{ '{:,}'.format(item.count).replace(',', ' ') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3 style="margin-top: 40px;">Průměrná cena podle kategorií</h3>
+<table style="margin-top: 20px;">
+    <thead>
+        <tr>
+            <th>Kategorie</th>
+            <th>Průměrná cena</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in stats.avg_price_by_category %}
+        <tr>
+            <td>{{ item.category }}</td>
+            <td>{{ '{:,.0f}'.format(item.avg_price).replace(',', ' ') if item.avg_price else '—' }} Kč</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
